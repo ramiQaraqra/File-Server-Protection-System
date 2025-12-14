@@ -1,0 +1,17 @@
+# Ignore Python cache
+__pycache__/
+*.pyc
+
+# Ignore the Watch Directory (don't commit files users upload!)
+WATCH_FOLDER/
+
+# Ignore the Isolation/Quarantine Directory
+Quarantine/
+
+# Ignore Logs
+*.log
+clamd.log
+
+# Ignore Test Viruses
+eicar.com
+eicar.txt
