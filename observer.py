@@ -1,13 +1,11 @@
 from pathlib import Path
 import time
-import sys
 import os
+import sys
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from scanner import scan_file
 
-OBSERVED_FOLDER = "C:\Users\rami6\OneDrive\Desktop\miniproject\To_Observe"
-ISOLATION_FOLDER = ""
 
 class FileSecurityHandler(FileSystemEventHandler):
     processing_files = set()
@@ -29,7 +27,7 @@ class FileSecurityHandler(FileSystemEventHandler):
         self.processing_files.add(path)
         
         try:
-            print(f"Scanning file: {os.path.basename(path)}...")
+            print(f"Scanning file: {path}")
             scan_result = scan_file(path)
             print(f"Scan result: {scan_result}")
             
@@ -45,21 +43,35 @@ class FileSecurityHandler(FileSystemEventHandler):
 
 
 if __name__ == "__main__":
-    if not os.path.isdir(OBSERVED_FOLDER):
-        print(f"Creating monitoring directory: {OBSERVED_FOLDER}")
-        os.makedirs(OBSERVED_FOLDER)
-        
-    for file in Path(OBSERVED_FOLDER).rglob('*.*'):
-        scan_result = scan_file(file)
-        #isolate the file if it was infected
+    if len(sys.argv) > 1:
+        new_path = sys.argv[1].strip()
+        with open('paths.txt', 'a') as f:
+            f.write(f"\n{new_path}")
+        print(f"Added new path: {new_path}")
+
     event_handler = FileSecurityHandler()
     observer = Observer()
-    observer.schedule(event_handler, OBSERVED_FOLDER, recursive=True)
-    observer.start()
-    
-    print(f"\nSTARTING MONITORING...")
-    print(f"Monitoring directory: {OBSERVED_FOLDER}. Drop files here.")
+    if not os.path.exists('paths.txt'):
+        open('paths.txt', 'w').close()
 
+    with open('paths.txt', 'r') as paths_file:
+        for path in paths_file:
+            path = path.strip()
+            if not path:
+                continue
+            if not os.path.isdir(path):
+                print(f" [NEW] Creating directory: {path}")
+                try:
+                    os.makedirs(path, exist_ok=True)
+                except OSError as e:
+                    print(f" [ERR] Could not create {path}: {e}")
+                    continue
+
+            observer.schedule(event_handler, path, recursive=True)
+            print(f" [OK] Monitoring: {path}")
+
+    observer.start()
+    print(f"\nSTARTING MONITORING... Drop or Modify files to test.")
     try:
         while True:
             time.sleep(1)
