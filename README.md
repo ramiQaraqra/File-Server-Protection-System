@@ -53,7 +53,7 @@ pip install watchdog clamd
 ## How to Run
 
 1.  **Configure Paths:**
-    Open `observer.py` and set the `OBSERVED_FOLDER` variable to the folder you wish to protect.
+    Open `paths.txt` and add all the paths to the folders you wish to protect.
 
 2.  **Start the Monitor:**
     Run the main monitoring script from your terminal:
@@ -93,6 +93,5 @@ The system operates in two layers:
 
   * **Concurrency:** To handle multiple events for the same file (e.g., specific file editors triggering 'Created' then 'Modified'), we use a `set()` to lock files currently being processed.
   * **Performance:** The system uses `cd.scan()` (synchronous). For extremely large files, `cd.scan_stream()` is the planned optimization.
-  * **Social Engineering:** (Future Implementation) The system will include detection for double-extensions (for example: `invoice.pdf.exe`) to flag potential phishing attempts.
 
 <!-- end list -->
