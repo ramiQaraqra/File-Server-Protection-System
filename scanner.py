@@ -1,6 +1,7 @@
 import clamd
 import os
 import sys
+from logger import log
 
 CLAMD_HOST = '127.0.0.1'
 CLAMD_PORT = 3310
@@ -12,6 +13,7 @@ def scan_file(file_path):
     try:
         cd = clamd.ClamdNetworkSocket(CLAMD_HOST, CLAMD_PORT)
         scan_result = cd.scan(file_path)
+        print(scan_result[file_path])
         if scan_result[file_path][0] == 'OK':
             return "Clean"
         elif scan_result[file_path][0] == 'FOUND':
@@ -26,12 +28,12 @@ def scan_file(file_path):
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: python scanner.py <path_to_file>")
+        log("Usage: python scanner.py <path_to_file>")
         sys.exit(1)
     file_to_scan = sys.argv[1]
-    print(f"Scanning file: {file_to_scan}...")
+    log(f"Scanning file: {file_to_scan}...")
     result = scan_file(file_to_scan)
-    print(f"Scan Result: {result}")
+    log(f"Scan Result: {result}")
     if result.startswith("Infected"):
         sys.exit(2)
     elif result.startswith("Clean"):
