@@ -5,9 +5,10 @@ import sys
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from scanner import scan_file
-from logger import log
+import logger
 from utils import isolate_file
 
+PATHS_FILE = "Paths.txt"
 class FileSecurityHandler(FileSystemEventHandler):
     processing_files = set()
 
@@ -22,59 +23,94 @@ class FileSecurityHandler(FileSystemEventHandler):
     def process(self, path, event_type):
         time.sleep(1.0)  # Ensure file operations are complete
         if path in self.processing_files:
-            log(f"[{event_type}] Ignored: File {os.path.basename(path)} is already being processed.")
+            logger.log(f"[{event_type}] Ignored: File {os.path.basename(path)} is already being processed.")
             return
 
-        log(f"\n--- FILE {event_type} DETECTED ---")
+        logger.log(f"\n--- FILE {event_type} DETECTED ---")
         self.processing_files.add(path)
         
         try:
-            log(f"Scanning file: {path}")
+            logger.log(f"Scanning file: {path}")
             scan_result = scan_file(path)
-            log(f"Scan result: {scan_result}")
+            logger.log(f"Scan result: {scan_result}")
             
             if scan_result.startswith("Infected"):
-                log("THREAT DETECTED!! This file needs to be isolated/logged.")
+                logger.log("THREAT DETECTED!! This file needs to be isolated/logged.")
                 threat_name = scan_result.split("(", 1)[1].rstrip(")")  
                 isolate_file(path, threat_name)
                             
         except Exception as e:
-            log(f"An error occurred during scan process: {e}")
+            logger.log(f"An error occurred during scan process: {e}")
         
         finally:
             self.processing_files.discard(path)
 
+def start_engine():
+    """
+    Main entry point for the CLI
+    """
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    paths_file = os.path.join(base_dir, PATHS_FILE)
+    
+    targets = []
+    if os.path.exists(paths_file):
+        with open(paths_file, "r") as f:
+            targets = [line.strip() for line in f if line.strip()]
+    
+    #if not targets:
+    #    DECIDE("[WARNING] No directories found. Use 'add' command first.")
+    
+    event_handler = FileSecurityHandler() 
+    observer = Observer()
+
+    for path in targets:
+        if os.path.exists(path):
+            observer.schedule(event_handler, path, recursive=False)
+            logger.print_info(f"   -> Watching: {path}")
+        else:
+            logger.print_warning(f"   [!] Invalid path skipped: {path}")
+
+    try:
+        observer.start()
+        logger.print_success("\n[SUCCESS] Engine Running. Press Ctrl+C to stop.")
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        observer.stop()
+        logger.print_info("\n[STOP] Engine stopped.")
+    
+    observer.join()
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         new_path = sys.argv[1].strip()
-        with open('paths.txt', 'a') as f:
+        with open(PATHS_FILE, 'a') as f:
             f.write(f"\n{new_path}")
-        log(f"Added new path: {new_path}")
+        logger.log_and_print(f"Added new path: {new_path}")
 
     event_handler = FileSecurityHandler()
     observer = Observer()
-    if not os.path.exists('paths.txt'):
-        open('paths.txt', 'w').close()
+    if not os.path.exists(PATHS_FILE):
+        open(PATHS_FILE, 'w').close()
 
-    with open('paths.txt', 'r') as paths_file:
+    with open(PATHS_FILE, 'r') as paths_file:
         for path in paths_file:
             path = path.strip()
             if not path:
                 continue
             if not os.path.isdir(path):
-                log(f" [NEW] Creating directory: {path}")
+                logger.log(f" [NEW] Creating directory: {path}")
                 try:
                     os.makedirs(path, exist_ok=True)
                 except OSError as e:
-                    log(f" [ERR] Could not create {path}: {e}")
+                    logger.log(f" [ERR] Could not create {path}: {e}")
                     continue
 
             observer.schedule(event_handler, path, recursive=True)
-            log(f" [OK] Monitoring: {path}")
+            logger.log(f" [OK] Monitoring: {path}")
 
     observer.start()
-    log(f"\nSTARTING MONITORING... Drop or Modify files to test.")
+    #DECIDE(f"\nSTARTING MONITORING... Drop or Modify files to test.")
     try:
         while True:
             time.sleep(1)
