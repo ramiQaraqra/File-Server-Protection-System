@@ -2,7 +2,7 @@ import os
 import shutil
 import time
 import subprocess
-from logger import log
+import logger
 
 #this folder should have permissions set so only Admin can read it.
 ISOLATION_FOLDER = "C:/Server_Quarantine"
@@ -19,29 +19,30 @@ def isolate_file(infected_file_path, threat_name):
     destination = os.path.join(ISOLATION_FOLDER, new_name)
 
     try:
-        log(f"!!! MOVING INFECTED FILE TO: {destination}")
+        logger.log(f"!!! MOVING INFECTED FILE TO: {destination}")
         shutil.move(infected_file_path, destination)
         
-        warning_note = infected_file_path + ".txt"
+        warning_note = "Note_about_" + infected_file_path + ".txt"
         with open(warning_note, "w") as f:
             f.write(f"The file '{filename}' was removed by Server Protection.\n")
             f.write(f"Reason: Malware Detected ({threat_name})\n")
             f.write("Contact the Administrator if you believe this is an error.")
             
     except Exception as e:
-        log(f"Error isolating file: {e}")
+        logger.log(f"Error isolating file: {e}")
 
 
 def create_secure_quarantine(path):
     if not os.path.exists(path):
         os.makedirs(path)
-        # Set permissions to allow only Admin access
+
+    # Set permissions to allow only Admin access
     try:
         subprocess.run(
             ['icacls', path, '/inheritance:r', '/grant:r', 'Administrators:(OI)(CI)F'], 
             check=True, 
             stdout=subprocess.DEVNULL
         )
-        print(f" [SECURE] Quarantine locked. Only Admins can access: {path}")
+        logger.log(f" [SECURE] Quarantine locked. Only Admins can access: {path}")
     except Exception as e:
-        print(f" [WARNING] Could not set permissions: {e}")
+        logger.log(f" [WARNING] Could not set permissions: {e}")
