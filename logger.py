@@ -1,3 +1,6 @@
+import datetime
+
+
 LOG_FILE = "log.txt"
 
 class Colors:
@@ -10,13 +13,16 @@ class Colors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
 
+def _get_timestamp():
+    return datetime.datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
+
 def log(s):
     with open(LOG_FILE, "a") as f:
-        f.write(s + "\n")
+        timestamp = _get_timestamp()
+        f.write(f"{timestamp} {s}\n")
 
 def log_exception(e):
-    with open(LOG_FILE, "a") as f:
-        f.write(f"Exception: {str(e)}\n")
+    log(f"EXCEPTION: {str(e)}")
 
 def log_and_print(s):
     print(s)
