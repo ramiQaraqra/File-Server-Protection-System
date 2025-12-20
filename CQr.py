@@ -1,12 +1,14 @@
 import argparse
 import sys
 import os
-import time
 
 import observer
 import logger
 
 PATHS_FILE = "Paths.txt"
+CLAMAV_PATH = r"C:\Program Files\ClamAV"
+# CONFIG_FILE = os.path.join(CLAMAV_PATH, "clamd.conf")
+# SAMPLE_FILE = os.path.join(CLAMAV_PATH, "clamd.conf.sample")
 
 def get_paths():
     if not os.path.exists(PATHS_FILE):
@@ -36,8 +38,30 @@ def handle_add(args):
         with open(PATHS_FILE, "a") as f:
             f.write(f"{path_to_add}\n")
         logger.print_success(f"[OK] Added to configuration: {path_to_add}")
+        
+def handle_configure_info(args):
+    if not os.path.exists(CLAMAV_PATH):
+        logger.print_exception(f"[ERR] ClamAV folder not found at: {CLAMAV_PATH}")
+        logger.print_info("Please install ClamAV from https://www.clamav.net/downloads and try again.")
+        return
+    logger.print_header("\n=== ClamAV Configuration Guide ===")
+    print("To enable the scanner, you must manually create two files")
+    print(f"in your ClamAV folder: {logger.Colors.BOLD}{CLAMAV_PATH}{logger.Colors.ENDC}")
+    logger.print_info("\n--- Step 1: Create 'clamd.conf' ---")
+    print("Create a file named 'clamd.conf' and paste this exact content:")
+    logger.print_success("""
+TCPSocket 3310
+TCPAddr 127.0.0.1""")
+    logger.print_info("\n--- Step 2: Create 'freshclam.conf' ---")
+    print("Create a file named 'freshclam.conf' and paste this exact content:")
+    logger.print_success("""
+DatabaseMirror database.clamav.net""")
+    logger.print_info("\n--- Step 3: Start the Service ---")
+    print(f"1. Go to {CLAMAV_PATH}")
+    print("2. Find the file named clamd.exe.")
+    print("3. Double-click to start it.")
     
-
+    logger.print_header("\n=== End of Guide ===")
 
 def handle_list(args):
     paths = get_paths()
@@ -51,6 +75,7 @@ def handle_list(args):
 
 def handle_help(args):
     print("USAGE:")
+    print(f"  {logger.Colors.BOLD}configure_info{logger.Colors.ENDC}  : Show manual setup instructions.")
     print(f"  {logger.Colors.BOLD}add <path>{logger.Colors.ENDC}     : Add directory to monitor list.")
     print(f"  {logger.Colors.BOLD}list{logger.Colors.ENDC}           : Show configured paths.")
     print(f"  {logger.Colors.BOLD}start{logger.Colors.ENDC}          : Launch the protection engine.")
@@ -89,6 +114,10 @@ def main():
     # COMMAND: help
     p_help = subparsers.add_parser('help')
     p_help.set_defaults(func=handle_help)
+
+    # COMMAND: configure_info
+    p_conf = subparsers.add_parser('configure_info')
+    p_conf.set_defaults(func=handle_configure_info)
 
     if len(sys.argv) == 1:
         logger.print_warning(f"No command provided.")
