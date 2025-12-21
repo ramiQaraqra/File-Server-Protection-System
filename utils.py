@@ -20,11 +20,12 @@ def isolate_file(infected_file_path, threat_name):
 
     try:
         logger.log(f"!!! MOVING INFECTED FILE TO: {destination}")
+        folder_path = os.path.dirname(infected_file_path)
         shutil.move(infected_file_path, destination)
-        
-        warning_note = "Note_about_" + infected_file_path + ".txt"
-        with open(warning_note, "w") as f:
-            f.write(f"The file '{filename}' was removed by Server Protection.\n")
+        warning_note_name = "Note_about_(" + filename + ").txt"
+        warning_note_path = os.path.join(folder_path, warning_note_name)
+        with open(warning_note_path, "w") as f:
+            f.write(f"The file '{filename}' was removed by the CQr Server Protection.\n")
             f.write(f"Reason: Malware Detected ({threat_name})\n")
             f.write("Contact the Administrator if you believe this is an error.")
             
@@ -33,6 +34,7 @@ def isolate_file(infected_file_path, threat_name):
 
 
 def create_secure_quarantine(path):
+
     if not os.path.exists(path):
         os.makedirs(path)
 
