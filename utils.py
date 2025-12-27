@@ -5,12 +5,11 @@ import subprocess
 import logger
 
 #this folder should have permissions set so only Admin can read it.
-ISOLATION_FOLDER = "C:/Server_Quarantine"
+ISOLATION_FOLDER = "C:/CQr_Quarantine"
 
 def isolate_file(infected_file_path, threat_name):
     if not os.path.exists(ISOLATION_FOLDER):
-        create_secure_quarantine("C:/Server_Quarantine")
-
+        create_secure_quarantine("C:/CQr_Quarantine")
     # We add a timestamp so if multiple uploads occurd at the same time with the same name, we don't overwrite.
     filename = os.path.basename(infected_file_path)
     timestamp = time.strftime("%Y%m%d-%H%M%S")

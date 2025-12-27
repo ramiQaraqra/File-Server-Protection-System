@@ -10,6 +10,20 @@ CLAMAV_PATH = r"C:\Program Files\ClamAV"
 # CONFIG_FILE = os.path.join(CLAMAV_PATH, "clamd.conf")
 # SAMPLE_FILE = os.path.join(CLAMAV_PATH, "clamd.conf.sample")
 
+BANNER = f"""
+{logger.Colors.CYAN}
+   █████████     ██████             
+  ███░░░░░███  ███░░░░███           
+ ███     ░░░  ███    ░░███ ████████ 
+░███         ░███     ░███░░███░░███
+░███         ░███   ██░███ ░███ ░░░ 
+░░███     ███░░███ ░░████  ░███     
+ ░░█████████  ░░░██████░██ █████    
+  ░░░░░░░░░     ░░░░░░ ░░ ░░░░░     
+                                                    
+{logger.Colors.ENDC}{logger.Colors.BOLD}CQr [Secure] Protection System v1.0 - Real-Time File Protection{logger.Colors.ENDC}
+"""
+
 def get_paths():
     if not os.path.exists(PATHS_FILE):
         return []
@@ -38,7 +52,7 @@ def handle_add(args):
         with open(PATHS_FILE, "a") as f:
             f.write(f"{path_to_add}\n")
         logger.print_success(f"[OK] Added to configuration: {path_to_add}")
-        
+
 def handle_configure_info(args):
     if not os.path.exists(CLAMAV_PATH):
         logger.print_exception(f"[ERR] ClamAV folder not found at: {CLAMAV_PATH}")
@@ -120,7 +134,7 @@ def main():
     p_conf.set_defaults(func=handle_configure_info)
 
     if len(sys.argv) == 1:
-        logger.print_warning(f"No command provided.")
+        print(BANNER)
         logger.print_header(f"Use 'help' to see available commands.")
         sys.exit(1)
     
