@@ -1,11 +1,8 @@
 # File Server Protection System
 
-**Course:** Cyber Security Project | **Project:** 4
+**Course:** Cyber Security Project
 
 **Students:** Mohamed Ali, Rami Qaraqra
-
-**IDs:** 214298184, 212898670
-
 
 ##  Project Overview
 
