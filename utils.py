@@ -52,6 +52,7 @@ def leave_warning_note(original_path, filename, threat_name):
         logger.log(f" [WARNING] Could not write warning note: {e}")
 
 def create_secure_quarantine(path):
+    # 1. Create directory if it doesn't exist
     if not os.path.exists(path):
         try:
             os.makedirs(path)
@@ -59,17 +60,25 @@ def create_secure_quarantine(path):
             logger.log(f" [ERR] Failed to create quarantine folder: {e}")
             return
 
-    # Force reset permissions every time to ensure security
-    # /inheritance:r -> Removes inherited perms from C:\
-    # /grant:r -> Grants Admin full control
+    # 2. ALLOW WRITE: Change Python read-only attribute to Writable
+    # 0o777 allows Read/Write/Execute for owner (needed for shutil.move)
     try:
-        subprocess.run(
-            ['icacls', path, '/inheritance:r', '/grant:r', 'Administrators:(OI)(CI)F'], 
-            check=True, 
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
-        )
-    except Exception:
-        # We suppress the error here because it usually fails if you aren't Admin,
-        # but we don't want to crash the whole engine over it.
-        pass
+        os.chmod(path, 0o777)
+    except Exception as e:
+        logger.log(f" [WARN] Failed to chmod quarantine folder: {e}")
+
+    # 3. SECURE ACLs: Allow Admins to Write, block everyone else
+    # /inheritance:r -> Removes inherited permissions (blocks standard users)
+    # /grant:r Administrators:F -> Grants Administrators FULL CONTROL (Read + Write + Delete)
+    if os.name == 'nt':
+        try:
+            subprocess.run(
+                ['icacls', path, '/inheritance:r', '/grant:r', 'Administrators:F'],
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+        except subprocess.CalledProcessError:
+            pass # Suppress if not running as Admin
+        except Exception as e:
+            logger.log(f" [WARN] Failed to set secure ACLs: {e}")

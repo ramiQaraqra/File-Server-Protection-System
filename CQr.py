@@ -6,7 +6,7 @@ import observer
 import logger
 
 PATHS_FILE = "Paths.txt"
-CLAMAV_PATH = r"C:\Program Files\ClamAV"
+CLAMAV_PATH = r"C:\\ClamAV"
 # CONFIG_FILE = os.path.join(CLAMAV_PATH, "clamd.conf")
 # SAMPLE_FILE = os.path.join(CLAMAV_PATH, "clamd.conf.sample")
 
