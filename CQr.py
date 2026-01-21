@@ -89,10 +89,11 @@ def handle_list(args):
 
 def handle_help(args):
     print("USAGE:")
-    print(f"  {logger.Colors.BOLD}configure_info{logger.Colors.ENDC}  : Show manual setup instructions.")
-    print(f"  {logger.Colors.BOLD}add <path>{logger.Colors.ENDC}     : Add directory to monitor list.")
-    print(f"  {logger.Colors.BOLD}list{logger.Colors.ENDC}           : Show configured paths.")
-    print(f"  {logger.Colors.BOLD}start{logger.Colors.ENDC}          : Launch the protection engine.")
+    print(f"  {logger.Colors.BOLD}configure_info{logger.Colors.ENDC}      : Show manual setup instructions.")
+    print(f"  {logger.Colors.BOLD}add <path>{logger.Colors.ENDC}         : Add directory to monitor list.")
+    print(f"  {logger.Colors.BOLD}list{logger.Colors.ENDC}               : Show configured paths.")
+    print(f"  {logger.Colors.BOLD}start{logger.Colors.ENDC}              : Launch the protection engine.")
+    print(f"  {logger.Colors.BOLD}start scan{logger.Colors.ENDC}         : Launch engine + scan existing files.")
 
 def handle_start(args):
     paths = get_paths()
@@ -106,7 +107,21 @@ def handle_start(args):
     try:
         observer.start_engine()
     except KeyboardInterrupt:
-        pass # Observer handles the shutdown 
+        pass # Observer handles the shutdown
+
+def handle_start_scan(args):
+    paths = get_paths()
+    if not paths:
+        logger.print_warning(f"[WARNING] Configuration is empty. No folders to monitor.")
+        
+
+    logger.print_info(f"[*] Initializing Observer Module with Initial Scan...")
+    logger.print_info(f"[*] Loading {len(paths)} watch targets...")
+    
+    try:
+        observer.start_engine_with_scan()
+    except KeyboardInterrupt:
+        pass # Observer handles the shutdown
 
 def main():
     parser = argparse.ArgumentParser(description="CQr CLI", add_help=False)
@@ -121,8 +136,9 @@ def main():
     p_list = subparsers.add_parser('list')
     p_list.set_defaults(func=handle_list)
 
-    # COMMAND: start
+    # COMMAND: start and start scan
     p_start = subparsers.add_parser('start')
+    p_start.add_argument('subcommand', nargs='?', default=None, choices=['scan'])
     p_start.set_defaults(func=handle_start)
 
     # COMMAND: help
@@ -141,6 +157,9 @@ def main():
     try:
         args = parser.parse_args()
         if hasattr(args, 'func'):
+            # Check if this is the 'start scan' command
+            if hasattr(args, 'subcommand') and args.subcommand == 'scan':
+                args.func = handle_start_scan
             args.func(args)
         else:
             parser.print_help()
