@@ -13,8 +13,8 @@ If a threat is detected, the system triggers an immediate response (Isolation/Lo
 ### Key Features
 * **Real-Time Monitoring:** Uses the `watchdog` library to detect "File Created" and "File Modified" events instantly.
 * **Automated Scanning:** Integrates with the open-source **ClamAV Daemon** (`clamd`) for high-performance scanning.
-* **Concurrency Handling:** Implements a locking mechanism to prevent race conditions when multiple threads or events try to scan the same file simultaneously.
-* **Smart Startup:** Includes a "Scan on Startup" routine to detect threats that may have been introduced while the system was offline.
+* **Non-Blocking Architecture:** Implements `ThreadPoolExecutor` with concurrent worker threads, enabling parallel file scanning without blocking the observer.
+* **Smart Startup:** Includes a "Scan on Startup" routine to detect threats that may have been introduced while the system was offline, while simultaneously monitoring for new files in real-time.
 
 
 ##  Prerequisites & Installation
@@ -49,28 +49,56 @@ pip install watchdog clamd
 
 ## How to Run
 
-1.  **Configure Paths:**
-    Open `paths.txt` and add all the paths to the folders you wish to protect.
+### Quick Start Example
 
-2.  **Start the Monitor:**
-    Run the main monitoring script from your terminal:
+1. **Add directories to monitor:**
+   ```bash
+   python CQr.py add C:\Users\YourUser\SharedFolder
+   ```
 
-    python observer.py
+2. **Start with initial scan (recommended for first run):**
+   ```bash
+   python CQr.py start scan
+   ```
+   This will:
+   - Scan all existing files in your monitored directories
+   - Simultaneously begin real-time monitoring for new files
+   - Both operations run concurrently through the thread pool
 
-3.  **Test:**
+3. **Or start with real-time monitoring only:**
+   ```bash
+   python CQr.py start
+   ```
 
-      * Drop a clean file into the folder -\> Output: `Clean`.
-      * Drop an EICAR test file -\> Output: `Infected`.
+4. **Test:**
+   - Drop a clean file into the folder → Output: `Clean`
+   - Drop an EICAR test file → Output: `Infected` (file is automatically isolated)
 
 
 ## System Architecture
 
-The system operates in two layers:
+The system operates in three layers:
 
 | Layer | Component | Description |
 | :--- | :--- | :--- |
-| **Trigger** | `observer.py` | Uses `watchdog` to listen for file system events. Handles logic for **directory creation** (logging only) vs **file creation** (scanning). |
-| **Scanner** | `scanner.py` | Acts as the client that communicates with the local ClamAV service on **Port 3310**. Returns standardized `Clean` or `Infected` status codes. |
+| **CLI** | `CQr.py` | Command-line interface for configuration and control. Handles user commands. |
+| **Observer** | `observer.py` | Uses `watchdog` to listen for file system events. Submits scan tasks to ThreadPoolExecutor for non-blocking processing. |
+| **Scanner** | `scanner.py` | Client that communicates with the local ClamAV Daemon on **Port 3310**. Returns standardized `Clean` or `Infected` status codes. |
+| **Thread Pool** | `concurrent.futures.ThreadPoolExecutor` | Manages concurrent scanning workers. Handles both real-time events and initial scan tasks. |
+
+### Execution Flow
+
+**Real-Time Monitoring (`start` command):**
+1. File system event occurs (CREATED/MODIFIED)
+2. Observer detects event and submits scan task to thread pool
+3. Event handler returns immediately (non-blocking)
+4. Worker thread scans file while observer continues listening
+
+**Initial Scan (`start scan` command):**
+1. Observer starts and begins real-time monitoring
+2. Initial scan thread walks directory tree and queues all files
+3. Worker threads scan files in parallel (up to 4 simultaneously)
+4. Real-time events are handled concurrently with initial scan
 
 -----
 
@@ -81,14 +109,12 @@ The system operates in two layers:
 | Environment Setup |  Completed | 20/12/2025 |
 | Core Scanning Logic |  Completed | 01/01/2026 |
 | Real-Time Monitoring |  Completed | 15/01/2026 |
-| Logging & Isolation |  In Progress | 25/01/2026 |
+| Logging & Isolation |  Completed | 25/01/2026 |
 | Final Testing |  Pending | 05/02/2026 |
 
 -----
 
 ## Known Issues / Design Decisions
 
-  * **Concurrency:** To handle multiple events for the same file (e.g., specific file editors triggering 'Created' then 'Modified'), we use a `set()` to lock files currently being processed.
-  * **Performance:** The system uses `cd.scan()` (synchronous). For extremely large files, `cd.scan_stream()` is the planned optimization.
-
-<!-- end list -->
+* **Concurrency:** The system uses a thread pool with configurable workers (default: 4) to handle concurrent scanning. File tracking prevents duplicate scans of the same file.
+* **Performance:** Implements non-blocking architecture. For extremely large files, `cd.scan_stream()` is a planned optimization for memory efficiency.
