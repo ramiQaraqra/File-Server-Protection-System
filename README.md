@@ -51,12 +51,13 @@ pip install watchdog clamd
 
 ### Quick Start Example
 
-1. **Add directories to monitor:**
+1. **Run the CLI (such as cmd, Powershell ...) as Adminstrator**
+2. **Add directories to monitor:**
    ```bash
    python CQr.py add C:\Users\YourUser\SharedFolder
    ```
 
-2. **Start with initial scan (recommended for first run):**
+3. **Start with initial scan (recommended for first run):**
    ```bash
    python CQr.py start scan
    ```
@@ -65,12 +66,12 @@ pip install watchdog clamd
    - Simultaneously begin real-time monitoring for new files
    - Both operations run concurrently through the thread pool
 
-3. **Or start with real-time monitoring only:**
+4. **Or start with real-time monitoring only:**
    ```bash
    python CQr.py start
    ```
 
-4. **Test:**
+5. **Test:**
    - Drop a clean file into the folder → Output: `Clean`
    - Drop an EICAR test file → Output: `Infected` (file is automatically isolated)
 
